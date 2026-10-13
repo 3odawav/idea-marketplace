@@ -1,9 +1,10 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router";
 import "../styles/index.css";
 import { I18nProvider } from "./i18n/i18n";
 import { ThemeProvider } from "./theme/theme";
 import { StoreProvider } from "./store/store";
 import { BackendProvider } from "./backend/db";
+import { useBackend, type Role } from "./backend/db";
 import { Layout } from "./components/Layout";
 import { Home } from "./pages/Home";
 import { Products } from "./pages/Products";
@@ -27,6 +28,15 @@ import { SubscriptionsHome, SubscriptionsCustomers, SubscriptionsBusinesses, Acc
 import { AdminLayout, AdminOverview, AdminSubscriptions, AdminPayments } from "./pages/Admin";
 import { Checkout } from "./pages/Checkout";
 import { RoomDesignerHome, PhotoGuide, RoomDesignerEditor } from "./pages/RoomDesigner";
+import { TileShowroom } from "./pages/TileShowroom";
+import { SurfaceStyles } from "./pages/SurfaceStyles";
+
+function ProtectedRoute({ roles }: { roles?: Role[] }) {
+  const { session } = useBackend();
+  if (!session) return <Navigate to="/login" replace />;
+  if (roles && !roles.includes(session.role)) return <Navigate to="/" replace />;
+  return <Outlet />;
+}
 
 export default function App() {
   return (
@@ -51,6 +61,9 @@ export default function App() {
               <Route path="/favorites" element={<Favorites />} />
               <Route path="/how-it-works" element={<HowItWorks />} />
               <Route path="/ai-room-visualizer" element={<AiVisualizer />} />
+              <Route path="/tile-showroom/:lookId" element={<TileShowroom />} />
+              <Route path="/tile-showroom" element={<TileShowroom />} />
+              <Route path="/surface-styles" element={<SurfaceStyles />} />
 
               {/* RFQ */}
               <Route path="/request-quote" element={<Navigate to="/request-quote/new" replace />} />
@@ -76,6 +89,7 @@ export default function App() {
               <Route path="/room-designer/project/:projectId" element={<RoomDesignerEditor />} />
 
               {/* Customer account */}
+              <Route element={<ProtectedRoute roles={["customer", "designer", "contractor"]} />}>
               <Route path="/account" element={<AccountLayout />}>
                 <Route index element={<AccountProfile />} />
                 <Route path="profile" element={<AccountProfile />} />
@@ -93,8 +107,10 @@ export default function App() {
                 <Route path="notifications" element={<AccountNotifications />} />
                 <Route path="settings" element={<AccountSettings />} />
               </Route>
+              </Route>
 
               {/* Business */}
+              <Route element={<ProtectedRoute roles={["business"]} />}>
               <Route path="/business/onboarding" element={<BusinessOnboarding />} />
               <Route path="/business" element={<BusinessLayout />}>
                 <Route index element={<BusinessOverview />} />
@@ -111,12 +127,15 @@ export default function App() {
                 <Route path="team" element={<BusinessReports />} />
                 <Route path="settings" element={<BusinessSettings />} />
               </Route>
+              </Route>
 
               {/* Admin */}
+              <Route element={<ProtectedRoute roles={["admin"]} />}>
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<AdminOverview />} />
                 <Route path="subscriptions" element={<AdminSubscriptions />} />
                 <Route path="settings/payments" element={<AdminPayments />} />
+              </Route>
               </Route>
 
               <Route path="*" element={<Navigate to="/" replace />} />
