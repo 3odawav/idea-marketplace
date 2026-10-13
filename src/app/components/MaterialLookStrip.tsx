@@ -1,394 +1,616 @@
 import { useRef, useState, useCallback, useEffect } from "react";
 import { Link } from "react-router";
-import { ArrowRight } from "lucide-react";
-import { motion } from "motion/react";
+import { X, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { useI18n } from "../i18n/i18n";
 import type { Locale } from "../data/types";
 
-// ─── Catalog data ────────────────────────────────────────────────────────────
+// ─── Tile product catalog ────────────────────────────────────────────
 
-export const MATERIAL_LOOKS = [
+type TileProduct = {
+  id: string;
+  name: Record<Locale, string>;
+  material: Record<Locale, string>;
+  price: number;
+  image: string;
+  sizes: string[];
+  accent: string;
+};
+
+const TILES: TileProduct[] = [
   {
-    id: "marble",
-    label: { en: "Marble Look", ar: "تأثير الرخام", fr: "Aspect Marbre" } as Record<Locale, string>,
-    sub: { en: "Natural veining & luxury surfaces", ar: "عروق طبيعية وأسطح فاخرة", fr: "Veines naturelles et surfaces de luxe" } as Record<Locale, string>,
-    image: "https://images.unsplash.com/photo-1566041510394-cf7c8fe21800?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1400",
-    tileImage: "https://images.unsplash.com/photo-1566041510394-cf7c8fe21800?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=600",
-    featured: ["Calacatta Oro", "Carrara White"],
+    id: "calacatta-gold",
+    name: { en: "Calacatta Gold", ar: "كالاكاتا جولد", fr: "Calacatta Or" },
+    material: { en: "Marble Look", ar: "تأثير الرخام", fr: "Aspect Marbre" },
+    price: 89,
+    image: "https://images.unsplash.com/photo-1706629503586-2731f65587ae?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=900",
+    sizes: ["30×60", "60×60", "60×120"],
+    accent: "#d4c4a0",
   },
   {
-    id: "wood",
-    label: { en: "Wood Look", ar: "تأثير الخشب", fr: "Aspect Bois" } as Record<Locale, string>,
-    sub: { en: "Warm grain & natural timber finishes", ar: "حبوب دافئة ولمسات خشبية", fr: "Grain chaud et finitions bois" } as Record<Locale, string>,
-    image: "https://images.unsplash.com/photo-1603323978104-4c1c0d1bfc72?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1400",
-    tileImage: "https://images.unsplash.com/photo-1603323978104-4c1c0d1bfc72?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=600",
-    featured: ["Oak Natural", "Walnut Dark"],
+    id: "carrara-white",
+    name: { en: "Carrara White", ar: "كارارا وايت", fr: "Carrare Blanc" },
+    material: { en: "Marble Look", ar: "تأثير الرخام", fr: "Aspect Marbre" },
+    price: 76,
+    image: "https://images.unsplash.com/photo-1765745518673-b562b7304a53?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=900",
+    sizes: ["60×60", "60×120", "90×90"],
+    accent: "#e0d8cc",
   },
   {
-    id: "stone",
-    label: { en: "Stone Look", ar: "تأثير الحجر", fr: "Aspect Pierre" } as Record<Locale, string>,
-    sub: { en: "Granite, slate & raw earth tones", ar: "جرانيت وأردواز وألوان ترابية", fr: "Granit, ardoise et tons terres" } as Record<Locale, string>,
-    image: "https://images.unsplash.com/photo-1566305977571-5666677c6e98?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1400",
-    tileImage: "https://images.unsplash.com/photo-1566305977571-5666677c6e98?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=600",
-    featured: ["Grigio Cemento", "Antracite"],
+    id: "statuario-luxe",
+    name: { en: "Statuario Luxe", ar: "ستاتواريو لوكس", fr: "Statuario Luxe" },
+    material: { en: "Marble Look", ar: "تأثير الرخام", fr: "Aspect Marbre" },
+    price: 112,
+    image: "https://images.unsplash.com/photo-1742844552048-410dfdf7b3c7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=900",
+    sizes: ["60×120", "90×90", "120×120"],
+    accent: "#c8baa0",
   },
   {
-    id: "pattern",
-    label: { en: "Pattern Look", ar: "تأثير النقشة", fr: "Aspect Motif" } as Record<Locale, string>,
-    sub: { en: "Mosaic, geometric & decorative art", ar: "فسيفساء وهندسي وزخرفي", fr: "Mosaïque, géométrique et décoratif" } as Record<Locale, string>,
-    image: "https://images.unsplash.com/photo-1584354273341-3eb96574e5be?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1400",
-    tileImage: "https://images.unsplash.com/photo-1584354273341-3eb96574e5be?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=600",
-    featured: ["Geometric Art", "Arabesque"],
+    id: "arabescato",
+    name: { en: "Arabescato", ar: "أرابيسكاتو", fr: "Arabescato" },
+    material: { en: "Marble Look", ar: "تأثير الرخام", fr: "Aspect Marbre" },
+    price: 98,
+    image: "https://images.unsplash.com/photo-1761602866012-ae9f888255dc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=900",
+    sizes: ["60×60", "60×120"],
+    accent: "#b8c4cc",
   },
   {
-    id: "colour",
-    label: { en: "Colour Look", ar: "تأثير الألوان", fr: "Aspect Couleur" } as Record<Locale, string>,
-    sub: { en: "Bold hues & expressive palettes", ar: "ألوان جريئة ولوحات معبّرة", fr: "Teintes vives et palettes expressives" } as Record<Locale, string>,
-    image: "https://images.unsplash.com/photo-1458682625221-3a45f8a844c7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1400",
-    tileImage: "https://images.unsplash.com/photo-1458682625221-3a45f8a844c7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=600",
-    featured: ["Teal Gloss", "Terracotta"],
+    id: "bianco-marmo",
+    name: { en: "Bianco Marmo", ar: "بيانكو ماربو", fr: "Bianco Marmo" },
+    material: { en: "Marble Look", ar: "تأثير الرخام", fr: "Aspect Marbre" },
+    price: 84,
+    image: "https://images.unsplash.com/photo-1776525433347-13ffc965601a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=900",
+    sizes: ["30×60", "60×60", "60×120"],
+    accent: "#d8d0c4",
+  },
+  {
+    id: "nordic-oak",
+    name: { en: "Nordic Oak", ar: "نورديك أوك", fr: "Chêne Nordique" },
+    material: { en: "Wood Look", ar: "تأثير الخشب", fr: "Aspect Bois" },
+    price: 64,
+    image: "https://images.unsplash.com/photo-1628744876525-f2678d8af47f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=900",
+    sizes: ["20×120", "30×120", "15×90"],
+    accent: "#c07830",
+  },
+  {
+    id: "walnut-dark",
+    name: { en: "Walnut Dark", ar: "وولنت داك", fr: "Noyer Sombre" },
+    material: { en: "Wood Look", ar: "تأثير الخشب", fr: "Aspect Bois" },
+    price: 72,
+    image: "https://images.unsplash.com/photo-1783125127053-db9f268a847b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=900",
+    sizes: ["20×120", "30×120"],
+    accent: "#8b5a2b",
+  },
+  {
+    id: "smoked-timber",
+    name: { en: "Smoked Timber", ar: "سموكد تمبر", fr: "Bois Fumé" },
+    material: { en: "Wood Look", ar: "تأثير الخشب", fr: "Aspect Bois" },
+    price: 68,
+    image: "https://images.unsplash.com/photo-1783125127015-bf513362480b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=900",
+    sizes: ["15×90", "20×120", "30×120"],
+    accent: "#a0724e",
+  },
+  {
+    id: "ash-whitewash",
+    name: { en: "Ash Whitewash", ar: "آش وايت واش", fr: "Frêne Blanchi" },
+    material: { en: "Wood Look", ar: "تأثير الخشب", fr: "Aspect Bois" },
+    price: 58,
+    image: "https://images.unsplash.com/photo-1769736438943-3c57cbd02c22?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=900",
+    sizes: ["20×120", "30×120"],
+    accent: "#c4b89a",
+  },
+  {
+    id: "metro-ceramic",
+    name: { en: "Metro Ceramic", ar: "مترو سيراميك", fr: "Métro Céramique" },
+    material: { en: "Ceramic", ar: "سيراميك", fr: "Céramique" },
+    price: 42,
+    image: "https://images.unsplash.com/photo-1676662241666-9c6f073021af?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=900",
+    sizes: ["10×20", "10×30", "7.5×30"],
+    accent: "#e0d0b8",
+  },
+  {
+    id: "colori-vivo",
+    name: { en: "Colori Vivo", ar: "كولوري فيفو", fr: "Couleurs Vives" },
+    material: { en: "Decorative", ar: "زخرفي", fr: "Décoratif" },
+    price: 55,
+    image: "https://images.unsplash.com/photo-1762633203398-d4432b5269b1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=900",
+    sizes: ["10×10", "20×20", "30×30"],
+    accent: "#e8824a",
+  },
+  {
+    id: "pietra-grigia",
+    name: { en: "Pietra Grigia", ar: "بييترا جريجيا", fr: "Pierre Grise" },
+    material: { en: "Stone Look", ar: "تأثير الحجر", fr: "Aspect Pierre" },
+    price: 79,
+    image: "https://images.unsplash.com/photo-1765556556784-7656ee0a1bd8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=900",
+    sizes: ["30×60", "60×60", "60×120"],
+    accent: "#8090a0",
   },
 ];
 
-// ─── Per-look signature palette ──────────────────────────────────────────────
-// Material-category-specific accent colors — not design system tokens.
-const LOOK_PALETTE: Record<string, {
-  accent: string;
-  glow: string;
-  overlayTop: string;
-  overlayBot: string;
-  n: string;
-}> = {
-  marble: {
-    accent: "#e2d4b4",
-    glow: "rgba(226,212,180,0.40)",
-    overlayTop: "linear-gradient(148deg, rgba(230,218,190,0.22) 0%, rgba(200,185,155,0.10) 45%, transparent 70%)",
-    overlayBot: "linear-gradient(0deg, rgba(226,212,180,0.28) 0%, transparent 100%)",
-    n: "01",
-  },
-  wood: {
-    accent: "#c07830",
-    glow: "rgba(192,120,48,0.48)",
-    overlayTop: "linear-gradient(148deg, rgba(140,80,20,0.30) 0%, rgba(100,55,10,0.14) 45%, transparent 70%)",
-    overlayBot: "linear-gradient(0deg, rgba(192,120,48,0.30) 0%, transparent 100%)",
-    n: "02",
-  },
-  stone: {
-    accent: "#6a94ae",
-    glow: "rgba(106,148,174,0.42)",
-    overlayTop: "linear-gradient(148deg, rgba(60,90,115,0.28) 0%, rgba(40,65,85,0.12) 45%, transparent 70%)",
-    overlayBot: "linear-gradient(0deg, rgba(106,148,174,0.28) 0%, transparent 100%)",
-    n: "03",
-  },
-  pattern: {
-    accent: "#a8527c",
-    glow: "rgba(168,82,124,0.44)",
-    overlayTop: "linear-gradient(148deg, rgba(120,40,80,0.32) 0%, rgba(80,25,55,0.14) 45%, transparent 70%)",
-    overlayBot: "linear-gradient(0deg, rgba(168,82,124,0.30) 0%, transparent 100%)",
-    n: "04",
-  },
-  colour: {
-    accent: "#2aaa88",
-    glow: "rgba(42,170,136,0.42)",
-    overlayTop: "linear-gradient(148deg, rgba(20,110,85,0.30) 0%, rgba(10,75,58,0.12) 45%, transparent 70%)",
-    overlayBot: "linear-gradient(0deg, rgba(42,170,136,0.28) 0%, transparent 100%)",
-    n: "05",
-  },
-};
+// Re-export as MATERIAL_LOOKS for backward compat with TileShowroom
+export const MATERIAL_LOOKS = TILES;
 
-// SVG noise grain — tactile luxury signature
-const GRAIN_URL = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E")`;
+// Triplicate for seamless infinite loop
+const LOOP: TileProduct[] = [...TILES, ...TILES, ...TILES];
+const TILE_COUNT = TILES.length;
 
-// ─── Single look card with 3D hover tilt + parallax ─────────────────────────
+// ─── Single tile card ────────────────────────────────────────────
 
-function LookCard({ look, idx }: { look: typeof MATERIAL_LOOKS[0]; idx: number }) {
+function TileCard({
+  tile,
+  isActive,
+  hasAnyActive,
+  onSelect,
+}: {
+  tile: TileProduct;
+  isActive: boolean;
+  hasAnyActive: boolean;
+  onSelect: () => void;
+}) {
   const { locale } = useI18n();
-  const pal = LOOK_PALETTE[look.id] ?? LOOK_PALETTE.marble;
-
   const wrapRef  = useRef<HTMLDivElement>(null);
   const imgRef   = useRef<HTMLImageElement>(null);
   const glossRef = useRef<HTMLDivElement>(null);
-  const ruleRef  = useRef<HTMLDivElement>(null);
-  const arrowRef = useRef<HTMLDivElement>(null);
   const [hovered, setHovered] = useState(false);
 
-  // All transforms written directly to DOM — no re-renders in hot path
   const onMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const el = wrapRef.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
+    if (!el || isActive) return;
+    const r  = el.getBoundingClientRect();
     const nx = (e.clientX - r.left) / r.width;
     const ny = (e.clientY - r.top)  / r.height;
-    const rx = (ny - 0.5) * -12;
-    const ry = (nx - 0.5) *  18;
-    el.style.transform = `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg) translateZ(18px)`;
+    el.style.transform = `perspective(900px) rotateX(${(ny - 0.5) * -10}deg) rotateY(${(nx - 0.5) * 14}deg) scale(1.03)`;
     if (imgRef.current)
-      imgRef.current.style.transform = `scale(1.14) translate(${(0.5 - nx) * 24}px, ${(0.5 - ny) * 16}px)`;
+      imgRef.current.style.transform = `scale(1.12) translate(${(0.5 - nx) * 20}px, ${(0.5 - ny) * 14}px)`;
     if (glossRef.current)
-      glossRef.current.style.background = `radial-gradient(circle 340px at ${nx * 100}% ${ny * 100}%, rgba(255,255,255,0.20), transparent 60%)`;
-    if (ruleRef.current)
-      ruleRef.current.style.width = "56px";
-    if (arrowRef.current)
-      arrowRef.current.style.transform = "translateX(6px)";
-  }, []);
+      glossRef.current.style.background = `radial-gradient(circle 280px at ${nx * 100}% ${ny * 100}%, rgba(255,255,255,0.18), transparent 60%)`;
+  }, [isActive]);
 
   const onLeave = useCallback(() => {
-    if (wrapRef.current)
-      wrapRef.current.style.transform = "perspective(900px) rotateX(0deg) rotateY(0deg) translateZ(0px)";
+    if (wrapRef.current && !isActive)
+      wrapRef.current.style.transform = "";
     if (imgRef.current)
-      imgRef.current.style.transform = "scale(1.07) translate(0,0)";
+      imgRef.current.style.transform = "scale(1.06)";
     if (glossRef.current)
       glossRef.current.style.background = "transparent";
-    if (ruleRef.current)
-      ruleRef.current.style.width = "28px";
-    if (arrowRef.current)
-      arrowRef.current.style.transform = "translateX(0)";
     setHovered(false);
-  }, []);
+  }, [isActive]);
+
+  // Apply active state transform directly to DOM
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    if (isActive) {
+      el.style.transform = "scale(1.05)";
+      el.style.transition = "transform 0.42s cubic-bezier(0.22,1,0.36,1), box-shadow 0.42s ease, opacity 0.35s ease";
+    } else {
+      el.style.transform = "";
+      el.style.transition = "transform 0.38s cubic-bezier(0.22,1,0.36,1), box-shadow 0.44s ease, opacity 0.35s ease";
+    }
+  }, [isActive]);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 52, scale: 0.93 }}
-      whileInView={{ opacity: 1, y: 0, scale: 1 }}
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.78, ease: [0.22, 1, 0.36, 1], delay: idx * 0.07 }}
-      style={{ height: "100%", userSelect: "none" }}
+    <div
+      ref={wrapRef}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
+      onMouseEnter={() => setHovered(true)}
+      onClick={onSelect}
+      style={{
+        position: "relative",
+        height: "100%",
+        borderRadius: "var(--idea-radius-lg)",
+        overflow: "hidden",
+        willChange: "transform",
+        cursor: "pointer",
+        opacity: hasAnyActive && !isActive ? 0.5 : 1,
+        boxShadow: isActive
+          ? `0 0 0 2.5px ${tile.accent}, 0 28px 72px rgba(0,0,0,0.52)`
+          : hovered
+            ? `0 24px 64px rgba(0,0,0,0.40)`
+            : `0 8px 32px rgba(0,0,0,0.28)`,
+      }}
     >
-      <div
-        ref={wrapRef}
-        onMouseMove={onMove}
-        onMouseLeave={onLeave}
-        onMouseEnter={() => setHovered(true)}
+      {/* Room photography */}
+      <img
+        ref={imgRef}
+        src={tile.image}
+        alt={tile.name[locale as Locale]}
+        draggable={false}
+        loading="lazy"
         style={{
-          position: "relative",
-          height: "100%",
-          borderRadius: "var(--idea-radius-lg)",
-          overflow: "hidden",
-          transformStyle: "preserve-3d",
-          willChange: "transform",
-          transition: "transform 0.32s cubic-bezier(0.22,1,0.36,1), box-shadow 0.44s ease",
-          boxShadow: hovered
-            ? `0 44px 96px rgba(0,0,0,0.68), 0 0 72px ${pal.glow}, inset 0 1px 0 rgba(255,255,255,0.16)`
-            : `0 12px 48px rgba(0,0,0,0.36), inset 0 1px 0 rgba(255,255,255,0.07)`,
-          cursor: "pointer",
+          position: "absolute", inset: 0,
+          width: "100%", height: "100%",
+          objectFit: "cover", objectPosition: "center",
+          transform: "scale(1.06)",
+          transition: "transform 0.5s cubic-bezier(0.22,1,0.36,1)",
+          pointerEvents: "none",
+          userSelect: "none",
+          filter: "saturate(1.12) contrast(1.04) brightness(1.02)",
         }}
-      >
-        <Link
-          to={`/tile-showroom/${look.id}`}
-          draggable={false}
-          style={{ display: "block", height: "100%", textDecoration: "none", color: "inherit" }}
-          onClick={(e) => {
-            // Block link navigation when the strip is being dragged
-            if ((e.currentTarget.closest(".idea-ls-strip") as HTMLElement)?.dataset.dragged === "1") {
-              e.preventDefault();
-            }
-          }}
-        >
-          {/* ① Parallax hero image */}
-          <img
-            ref={imgRef}
-            src={look.image}
-            alt={look.label[locale as Locale]}
-            draggable={false}
-            loading="lazy"
-            style={{
-              position: "absolute", inset: 0, width: "100%", height: "100%",
-              objectFit: "cover", objectPosition: "center",
-              transform: "scale(1.07) translate(0,0)",
-              transition: "transform 0.46s cubic-bezier(0.22,1,0.36,1)",
-              pointerEvents: "none",
-              userSelect: "none",
-            }}
-          />
+      />
 
-          {/* ② Colour-grade overlay — unique mood per look */}
-          <div style={{
-            position: "absolute", inset: 0,
-            background: pal.overlayTop,
-            mixBlendMode: "overlay",
-            pointerEvents: "none",
-          }} />
+      {/* Dark gradient vignette */}
+      <div style={{
+        position: "absolute", inset: 0,
+        background: "linear-gradient(0deg, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.18) 50%, rgba(0,0,0,0.06) 100%)",
+        pointerEvents: "none",
+      }} />
 
-          {/* ③ Dark vignette */}
-          <div style={{
-            position: "absolute", inset: 0,
-            background: "linear-gradient(0deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.20) 48%, rgba(0,0,0,0.06) 100%)",
-            pointerEvents: "none",
-          }} />
+      {/* Accent warm wash bottom */}
+      <div style={{
+        position: "absolute", bottom: 0, left: 0, right: 0, height: "45%",
+        background: `linear-gradient(0deg, ${tile.accent}30 0%, transparent 100%)`,
+        pointerEvents: "none",
+      }} />
 
-          {/* ④ Accent warm wash — bottom */}
-          <div style={{
-            position: "absolute", bottom: 0, left: 0, right: 0, height: "52%",
-            background: pal.overlayBot,
-            pointerEvents: "none",
-          }} />
+      {/* Cursor-follow gloss */}
+      <div ref={glossRef} style={{
+        position: "absolute", inset: 0, pointerEvents: "none",
+        transition: "background 0.08s linear",
+      }} />
 
-          {/* ⑤ Grain texture — tactile signature */}
-          <div style={{
-            position: "absolute", inset: 0,
-            backgroundImage: GRAIN_URL,
-            backgroundSize: "220px 220px",
-            opacity: 0.05,
-            mixBlendMode: "overlay",
-            pointerEvents: "none",
-          }} />
+      {/* Active selection ring glow */}
+      {isActive && (
+        <div style={{
+          position: "absolute", inset: 0,
+          boxShadow: `inset 0 0 0 2px ${tile.accent}`,
+          borderRadius: "var(--idea-radius-lg)",
+          pointerEvents: "none",
+        }} />
+      )}
 
-          {/* ⑥ Cursor-follow gloss */}
-          <div ref={glossRef} style={{
-            position: "absolute", inset: 0, pointerEvents: "none",
-            transition: "background 0.07s linear",
-          }} />
-
-          {/* ⑦ Shimmer sweep */}
-          <div
-            className={`idea-ls-sweep idea-ls-sweep--${look.id}`}
-            style={{
-              position: "absolute", top: 0, bottom: 0, left: 0,
-              width: "38%",
-              background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.07) 45%, rgba(255,255,255,0.13) 50%, rgba(255,255,255,0.07) 55%, transparent)",
-              transform: "skewX(-14deg)",
-              pointerEvents: "none",
-            }}
-          />
-
-          {/* ── TOP: serial + pill ──────────────────────────────────────────── */}
-          <div style={{
-            position: "absolute", top: 0, left: 0, right: 0,
-            display: "flex", justifyContent: "space-between", alignItems: "flex-start",
-            padding: "20px 20px 0",
-            pointerEvents: "none",
-          }}>
-            <div style={{
-              fontFamily: "var(--idea-font-display)",
-              fontSize: 82, fontWeight: 700, lineHeight: 1,
-              letterSpacing: "-0.03em",
-              color: hovered ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.05)",
-              transition: "color 0.42s ease",
-              userSelect: "none",
-            }}>
-              {pal.n}
-            </div>
-
-            <div style={{
-              background: "rgba(0,0,0,0.55)",
-              backdropFilter: "blur(16px)",
-              WebkitBackdropFilter: "blur(16px)",
-              border: `1px solid ${pal.accent}60`,
-              borderRadius: "var(--idea-radius-full)",
-              padding: "7px 16px",
-              fontFamily: "var(--idea-font-display)",
-              fontSize: "var(--idea-text-xs)",
-              letterSpacing: "0.14em",
-              color: pal.accent,
-              textTransform: "uppercase",
-              marginTop: 8, flexShrink: 0,
-            }}>
-              {look.label[locale as Locale]}
-            </div>
-          </div>
-
-          {/* ── MID: featured names ─────────────────────────────────────────── */}
-          <div style={{
-            position: "absolute", top: 106, left: 20,
-            display: "flex", flexDirection: "column", gap: 3,
-            pointerEvents: "none",
-          }}>
-            {look.featured.map(name => (
-              <span key={name} style={{
-                fontFamily: "var(--idea-font-display)",
-                fontSize: "var(--idea-text-xs)",
-                letterSpacing: "0.12em",
-                color: "rgba(255,255,255,0.30)",
-                textTransform: "uppercase",
-              }}>{name}</span>
-            ))}
-          </div>
-
-          {/* ── BOTTOM: rule + label + desc ─────────────────────────────────── */}
-          <div style={{
-            position: "absolute", bottom: 0, left: 0, right: 0,
-            padding: "20px 20px 26px",
-            pointerEvents: "none",
-          }}>
-            {/* Expanding accent rule */}
-            <div
-              ref={ruleRef}
-              style={{
-                height: 2, borderRadius: 1,
-                background: pal.accent,
-                marginBottom: "var(--idea-space-3)",
-                width: 28,
-                transition: "width 0.46s cubic-bezier(0.22,1,0.36,1)",
-              }}
-            />
-
-            {/* Name + arrow */}
-            <div style={{
-              display: "flex", alignItems: "center",
-              justifyContent: "space-between", gap: "var(--idea-space-3)",
-              marginBottom: "var(--idea-space-2)",
-            }}>
-              <div style={{
-                fontFamily: "var(--idea-font-display)",
-                fontSize: "var(--idea-text-xl)",
-                fontWeight: 500, color: "white",
-                letterSpacing: "0.04em", lineHeight: 1.1,
-              }}>
-                {look.label[locale as Locale]}
-              </div>
-
-              <div
-                ref={arrowRef}
-                style={{
-                  width: 44, height: 44,
-                  borderRadius: "var(--idea-radius-full)",
-                  border: `1.5px solid ${pal.accent}`,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  color: pal.accent, flexShrink: 0,
-                  transition: "transform 0.38s cubic-bezier(0.22,1,0.36,1)",
-                }}
-              >
-                <ArrowRight size={15} />
-              </div>
-            </div>
-
-            <p style={{
-              margin: 0,
-              fontFamily: "var(--idea-font-body)",
-              fontSize: "var(--idea-text-sm)",
-              color: "rgba(255,255,255,0.46)",
-              lineHeight: 1.65, letterSpacing: "0.01em",
-            }}>
-              {look.sub[locale as Locale]}
-            </p>
-          </div>
-        </Link>
+      {/* TOP: material category badge */}
+      <div style={{
+        position: "absolute", top: "var(--idea-space-3)", left: "var(--idea-space-3)",
+        background: "rgba(0,0,0,0.52)",
+        backdropFilter: "blur(14px)",
+        WebkitBackdropFilter: "blur(14px)",
+        border: `1px solid ${tile.accent}55`,
+        borderRadius: "var(--idea-radius-full)",
+        padding: "5px 13px",
+        fontFamily: "var(--idea-font-display)",
+        fontSize: "var(--idea-text-xs)",
+        letterSpacing: "0.12em",
+        color: tile.accent,
+        textTransform: "uppercase",
+        pointerEvents: "none",
+      }}>
+        {tile.material[locale as Locale]}
       </div>
-    </motion.div>
+
+      {/* BOTTOM: tile name + price hint + tap cue */}
+      <div style={{
+        position: "absolute", bottom: 0, left: 0, right: 0,
+        padding: "var(--idea-space-5) var(--idea-space-4) var(--idea-space-4)",
+        pointerEvents: "none",
+      }}>
+        {/* Accent line */}
+        <div style={{
+          height: 2, width: isActive ? 44 : 22,
+          background: tile.accent,
+          borderRadius: 1,
+          marginBottom: "var(--idea-space-2)",
+          transition: "width 0.45s cubic-bezier(0.22,1,0.36,1)",
+        }} />
+
+        <div style={{
+          display: "flex", alignItems: "flex-end",
+          justifyContent: "space-between", gap: 8,
+        }}>
+          <div>
+            <div style={{
+              fontFamily: "var(--idea-font-display)",
+              fontSize: "clamp(17px, 2.2vw, 22px)",
+              fontWeight: 500,
+              color: "rgba(255,255,255,0.96)",
+              letterSpacing: "0.02em",
+              lineHeight: 1.15,
+              marginBottom: 3,
+            }}>
+              {tile.name[locale as Locale]}
+            </div>
+            {tile.price > 0 && (
+              <div style={{
+                fontFamily: "var(--idea-font-body)",
+                fontSize: "var(--idea-text-xs)",
+                color: "rgba(255,255,255,0.48)",
+                letterSpacing: "0.06em",
+              }}>
+                {locale === "ar" ? `من ${tile.price} جنيه/م²` : `from ${tile.price} EGP/m²`}
+              </div>
+            )}
+          </div>
+
+          <div style={{
+            width: 38, height: 38, flexShrink: 0,
+            borderRadius: "var(--idea-radius-full)",
+            border: `1.5px solid ${tile.accent}aa`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            color: tile.accent,
+          }}>
+            {isActive ? <X size={13} /> : <ArrowRight size={13} />}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
-// ─── Main strip component ────────────────────────────────────────────────────
+// ─── Detail panel (shown below strip when a tile is selected) ────────────────
+
+function DetailPanel({
+  tile,
+  onClose,
+  locale,
+}: {
+  tile: TileProduct | null;
+  onClose: () => void;
+  locale: string;
+}) {
+  const [selectedSize, setSelectedSize] = useState<string>("");
+  const isOpen = tile !== null;
+
+  useEffect(() => {
+    if (tile) setSelectedSize(tile.sizes[0]);
+  }, [tile?.id]);
+
+  const t = tile;
+
+  const priceLabel   = locale === "ar" ? "السعر / م²" : locale === "fr" ? "Prix / m²" : "Price / m²";
+  const sizeLabel    = locale === "ar" ? "اختر المقاس" : locale === "fr" ? "Choisir la taille" : "Choose Size";
+  const exploreLabel = locale === "ar" ? "استعرض المجموعة" : locale === "fr" ? "Explorer la collection" : "Explore Collection";
+
+  return (
+    <div style={{
+      maxHeight: isOpen ? "340px" : "0px",
+      overflow: "hidden",
+      transition: "max-height 0.55s cubic-bezier(0.22,1,0.36,1)",
+    }}>
+      {t && (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "200px 1fr",
+            gap: "var(--idea-space-5)",
+            background: "var(--idea-surface)",
+            borderTop: `3px solid ${t.accent}`,
+            padding: "var(--idea-space-5) var(--idea-space-7)",
+            position: "relative",
+          }}
+          className="idea-ls-panel"
+        >
+          {/* Close button */}
+          <button
+            onClick={onClose}
+            style={{
+              position: "absolute", top: "var(--idea-space-4)", right: "var(--idea-space-4)",
+              background: "var(--idea-bg-2)",
+              border: "var(--idea-hairline)",
+              borderRadius: "var(--idea-radius-full)",
+              width: 36, height: 36,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer",
+              color: "var(--idea-text-muted)",
+              fontFamily: "var(--idea-font-body)",
+              fontSize: "var(--idea-text-xs)",
+              gap: 4,
+            }}
+          >
+            <X size={13} />
+          </button>
+
+          {/* Left: image */}
+          <div style={{
+            borderRadius: "var(--idea-radius-md)",
+            overflow: "hidden",
+            height: 220,
+            flexShrink: 0,
+          }}>
+            <img
+              src={t.image}
+              alt={t.name[locale as Locale]}
+              style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
+            />
+          </div>
+
+          {/* Right: details */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--idea-space-4)" }}>
+            {/* Name + material */}
+            <div>
+              <div style={{
+                fontFamily: "var(--idea-font-body)",
+                fontSize: "var(--idea-text-xs)",
+                color: t.accent,
+                textTransform: "uppercase",
+                letterSpacing: "var(--idea-tracking-wide)",
+                marginBottom: 4,
+              }}>
+                {t.material[locale as Locale]}
+              </div>
+              <div style={{
+                fontFamily: "var(--idea-font-display)",
+                fontSize: "clamp(20px, 2.4vw, 28px)",
+                color: "var(--idea-text)",
+                fontWeight: 500,
+                letterSpacing: "0.02em",
+              }}>
+                {t.name[locale as Locale]}
+              </div>
+            </div>
+
+            {/* Price */}
+            <div style={{ display: "flex", alignItems: "center", gap: "var(--idea-space-4)" }}>
+              <div>
+                <div style={{
+                  fontFamily: "var(--idea-font-body)",
+                  fontSize: "var(--idea-text-xs)",
+                  color: "var(--idea-text-muted)",
+                  letterSpacing: "0.06em",
+                  marginBottom: 2,
+                }}>
+                  {priceLabel}
+                </div>
+                {t.price > 0 ? (
+                  <div style={{
+                    fontFamily: "var(--idea-font-display)",
+                    fontSize: "var(--idea-text-xl)",
+                    color: "var(--idea-gold-bright)",
+                    fontWeight: 500,
+                  }}>
+                    {t.price} <span style={{ fontSize: "var(--idea-text-sm)", color: "var(--idea-text-muted)" }}>EGP</span>
+                  </div>
+                ) : (
+                  <div style={{
+                    fontFamily: "var(--idea-font-display)",
+                    fontSize: "var(--idea-text-base)",
+                    color: "var(--idea-text-muted)",
+                  }}>
+                    {locale === "ar" ? "السعر عند الطلب" : "Price on request"}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Size selector */}
+            <div>
+              <div style={{
+                fontFamily: "var(--idea-font-body)",
+                fontSize: "var(--idea-text-xs)",
+                color: "var(--idea-text-muted)",
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                marginBottom: "var(--idea-space-2)",
+              }}>
+                {sizeLabel}
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--idea-space-2)" }}>
+                {t.sizes.map((size) => {
+                  const active = size === selectedSize;
+                  return (
+                    <button
+                      key={size}
+                      onClick={() => setSelectedSize(size)}
+                      style={{
+                        background: active ? t.accent : "var(--idea-bg-2)",
+                        border: active ? `1.5px solid ${t.accent}` : "var(--idea-hairline)",
+                        borderRadius: "var(--idea-radius-full)",
+                        padding: "6px 14px",
+                        fontFamily: "var(--idea-font-body)",
+                        fontSize: "var(--idea-text-sm)",
+                        color: active ? "#fff" : "var(--idea-text)",
+                        cursor: "pointer",
+                        transition: "all 0.22s ease",
+                        fontWeight: active ? 500 : 400,
+                      }}
+                    >
+                      {size} cm
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* CTA */}
+            <Link
+              to="/surface-styles"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "var(--idea-space-2)",
+                background: "var(--idea-gold-bright)",
+                color: "var(--idea-on-gold)",
+                fontFamily: "var(--idea-font-display)",
+                fontSize: "var(--idea-text-sm)",
+                letterSpacing: "0.10em",
+                textTransform: "uppercase",
+                textDecoration: "none",
+                padding: "10px var(--idea-space-5)",
+                borderRadius: "var(--idea-radius-full)",
+                width: "fit-content",
+                transition: "background 0.22s ease",
+              }}
+              className="idea-ls-cta"
+            >
+              {exploreLabel}
+              <ArrowRight size={14} />
+            </Link>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main carousel strip ───────────────────────────────────────────
 
 export function MaterialLookStrip() {
   const { locale } = useI18n();
-  const stripRef   = useRef<HTMLDivElement>(null);
 
-  // ── Drag state — all refs for the hot path, no React state ───────────────
-  const dragging  = useRef(false);
-  const lastX     = useRef(0);
-  const velRef    = useRef(0);
-  const rafRef    = useRef<number>();
-  const didMove   = useRef(false);    // distinguish click vs drag
-  const [cursor, setCursor] = useState<"grab" | "grabbing">("grab");
+  const stripRef       = useRef<HTMLDivElement>(null);
+  const singleWidthRef = useRef(0);
+  const dragging       = useRef(false);
+  const lastX          = useRef(0);
+  const velRef         = useRef(0);
+  const didMove        = useRef(false);
+  const rafRef         = useRef<number>();
+  const autoRafRef     = useRef<number>();
 
-  // ── Direct DOM writes for 3D lean — no re-renders ───────────────────────
-  const setLeanDOM = useCallback((deg: number) => {
-    const el = stripRef.current;
-    if (!el) return;
-    el.style.transform = `rotateY(${deg}deg)`;
+  const [cursor,     setCursor]     = useState<"grab" | "grabbing">("grab");
+  const [activeTile, setActiveTile] = useState<TileProduct | null>(null);
+  const activeTileRef = useRef<TileProduct | null>(null);
+
+  const setActive = useCallback((tile: TileProduct | null) => {
+    activeTileRef.current = tile;
+    setActiveTile(tile);
   }, []);
 
+  // ── Measure single copy width after mount ───────────────────────
+  useEffect(() => {
+    const strip = stripRef.current;
+    if (!strip) return;
+
+    const measure = () => {
+      const cards = strip.querySelectorAll("[data-ls-card]");
+      if (cards.length >= TILE_COUNT * 2) {
+        const c0 = (cards[0] as HTMLElement).offsetLeft;
+        const cN = (cards[TILE_COUNT] as HTMLElement).offsetLeft;
+        singleWidthRef.current = cN - c0;
+        strip.scrollLeft = singleWidthRef.current;
+      }
+    };
+
+    const id = requestAnimationFrame(measure);
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  // ── Seamless wrap helper ───────────────────────────────────────
+  const wrapScroll = useCallback(() => {
+    const strip = stripRef.current;
+    const sw = singleWidthRef.current;
+    if (!strip || sw <= 0) return;
+    const sl = strip.scrollLeft;
+    if (sl >= 2 * sw) { strip.scrollLeft = sl - sw; }
+    else if (sl < sw * 0.02) { strip.scrollLeft = sl + sw; }
+  }, []);
+
+  // ── Auto-scroll rAF loop ────────────────────────────────────
+  useEffect(() => {
+    const tick = () => {
+      if (!dragging.current && !activeTileRef.current) {
+        const strip = stripRef.current;
+        if (strip) {
+          strip.scrollLeft += 0.55;
+          wrapScroll();
+        }
+      }
+      autoRafRef.current = requestAnimationFrame(tick);
+    };
+    autoRafRef.current = requestAnimationFrame(tick);
+    return () => { if (autoRafRef.current) cancelAnimationFrame(autoRafRef.current); };
+  }, [wrapScroll]);
+
+  // ── Drag logic ────────────────────────────────────────────
   const startDrag = useCallback((clientX: number) => {
     dragging.current = true;
     didMove.current  = false;
@@ -396,7 +618,6 @@ export function MaterialLookStrip() {
     velRef.current   = 0;
     setCursor("grabbing");
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    // Immediately kill transition so drag is 1:1 responsive
     if (stripRef.current) stripRef.current.style.transition = "none";
   }, []);
 
@@ -404,48 +625,35 @@ export function MaterialLookStrip() {
     if (!dragging.current || !stripRef.current) return;
     const dx = lastX.current - clientX;
     if (Math.abs(dx) > 2) didMove.current = true;
-    velRef.current = dx * 0.65 + velRef.current * 0.35;
+    velRef.current = dx * 0.6 + velRef.current * 0.4;
     stripRef.current.scrollLeft += dx;
     lastX.current = clientX;
-    // 3D lean into motion direction — written directly to DOM
-    const lean = Math.max(-3, Math.min(3, velRef.current * -0.16));
-    setLeanDOM(lean);
-  }, [setLeanDOM]);
+  }, []);
 
   const endDrag = useCallback(() => {
     if (!dragging.current) return;
     dragging.current = false;
     setCursor("grab");
 
-    // Mark strip as "dragged" briefly to block link clicks
     if (stripRef.current && didMove.current) {
       stripRef.current.dataset.dragged = "1";
-      setTimeout(() => { if (stripRef.current) delete stripRef.current.dataset.dragged; }, 200);
+      setTimeout(() => { if (stripRef.current) delete stripRef.current.dataset.dragged; }, 220);
     }
 
-    // Re-enable spring-back transition for the settle
-    if (stripRef.current) stripRef.current.style.transition = "transform 1s cubic-bezier(0.22,1,0.36,1)";
-
-    // Momentum + lean settle via rAF
     const step = () => {
-      velRef.current *= 0.92;
+      velRef.current *= 0.90;
       if (stripRef.current) stripRef.current.scrollLeft += velRef.current;
-
-      const currentLean = parseFloat(stripRef.current?.style.transform.replace("rotateY(", "").replace("deg)", "") || "0");
-      const nextLean = currentLean * 0.86;
-      setLeanDOM(nextLean);
-
-      if (Math.abs(velRef.current) > 0.3 || Math.abs(nextLean) > 0.05) {
+      wrapScroll();
+      if (Math.abs(velRef.current) > 0.3) {
         rafRef.current = requestAnimationFrame(step);
-      } else {
-        setLeanDOM(0);
       }
     };
     rafRef.current = requestAnimationFrame(step);
-  }, [setLeanDOM]);
+  }, [wrapScroll]);
 
-  // Clean up rAF on unmount
-  useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); }, []);
+  useEffect(() => () => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+  }, []);
 
   // Mouse handlers
   const onMouseDown  = (e: React.MouseEvent) => { e.preventDefault(); startDrag(e.clientX); };
@@ -453,20 +661,18 @@ export function MaterialLookStrip() {
   const onMouseUp    = () => endDrag();
   const onMouseLeave = () => { if (dragging.current) endDrag(); };
 
-  // Touch handlers — attached via useEffect with { passive: false } so
-  // e.preventDefault() actually works on iOS Safari (React synthetic
-  // onTouchMove is passive by default and cannot prevent native scroll).
+  // iOS non-passive touch handlers
   useEffect(() => {
     const el = stripRef.current;
     if (!el) return;
     const onTS = (e: TouchEvent) => { startDrag(e.touches[0].clientX); };
     const onTM = (e: TouchEvent) => {
-      e.preventDefault(); // stops iOS page scroll while swiping the strip
+      e.preventDefault();
       moveDrag(e.touches[0].clientX);
     };
     const onTE = () => endDrag();
     el.addEventListener("touchstart",  onTS, { passive: true  });
-    el.addEventListener("touchmove",   onTM, { passive: false }); // non-passive!
+    el.addEventListener("touchmove",   onTM, { passive: false });
     el.addEventListener("touchend",    onTE);
     el.addEventListener("touchcancel", onTE);
     return () => {
@@ -477,40 +683,33 @@ export function MaterialLookStrip() {
     };
   }, [startDrag, moveDrag, endDrag]);
 
-  // ── Active dot tracking ──────────────────────────────────────────────────
-  const [activeDot, setActiveDot] = useState(0);
-  const onScroll = useCallback(() => {
-    const el = stripRef.current;
-    if (!el) return;
-    const center = el.scrollLeft + el.clientWidth / 2;
-    const cards = el.querySelectorAll("[data-ls-card]");
-    let closest = 0, minDist = Infinity;
-    cards.forEach((card, i) => {
-      const c = (card as HTMLElement).offsetLeft + (card as HTMLElement).offsetWidth / 2;
-      const d = Math.abs(c - center);
-      if (d < minDist) { minDist = d; closest = i; }
-    });
-    setActiveDot(closest);
-  }, []);
+  // ── Card selection — center selected card ───────────────────────
+  const handleCardSelect = useCallback((tile: TileProduct, cardEl: HTMLElement | null) => {
+    if (activeTileRef.current?.id === tile.id) {
+      setActive(null);
+      return;
+    }
+    setActive(tile);
+    if (cardEl && stripRef.current) {
+      const strip = stripRef.current;
+      const cardCenter = cardEl.offsetLeft + cardEl.offsetWidth / 2;
+      const targetScroll = cardCenter - strip.clientWidth / 2;
+      strip.scrollTo({ left: targetScroll, behavior: "smooth" });
+    }
+  }, [setActive]);
 
-  const eyebrow = locale === "ar" ? "اكتشف الأسطح" : locale === "fr" ? "Explorer les surfaces" : "Shop by Surface";
-  const heading  = locale === "ar" ? "اختر أسلوب سطحك" : locale === "fr" ? "Trouvez votre style" : "Find Your Surface Style";
+  const eyebrow = locale === "ar" ? "اكتشف الخامات" : locale === "fr" ? "Explorer les matériaux" : "Shop by Material";
+  const heading = locale === "ar" ? "اختر السيراميك المثالي" : locale === "fr" ? "Trouvez votre carrelage idéal" : "Find Your Perfect Tile";
 
   return (
     <section style={{ background: "var(--idea-bg-2)", paddingBottom: "var(--idea-space-7)", overflowX: "hidden" }}>
 
-      {/* ── Header ───────────────────────────────────────────────────────── */}
-      <motion.div
-        initial={{ opacity: 0, y: 22 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-40px" }}
-        transition={{ duration: 0.62, ease: [0.22, 1, 0.36, 1] }}
-        style={{
-          display: "flex", justifyContent: "space-between", alignItems: "flex-end",
-          padding: "var(--idea-space-8) var(--idea-space-7) var(--idea-space-5)",
-          flexWrap: "wrap", gap: "var(--idea-space-4)",
-        }}
-      >
+      {/* ── Section header ───────────────────────────────────────────── */}
+      <div style={{
+        display: "flex", justifyContent: "space-between", alignItems: "flex-end",
+        padding: "var(--idea-space-8) var(--idea-space-7) var(--idea-space-5)",
+        flexWrap: "wrap", gap: "var(--idea-space-4)",
+      }}>
         <div>
           <div style={{
             display: "flex", alignItems: "center",
@@ -534,131 +733,112 @@ export function MaterialLookStrip() {
           }}>{heading}</h2>
         </div>
 
-        {/* Subtle swipe hint — text only, no arrows */}
         <div style={{
+          display: "flex", alignItems: "center", gap: "var(--idea-space-2)",
           fontFamily: "var(--idea-font-body)",
           fontSize: "var(--idea-text-xs)",
           color: "var(--idea-text-faint)",
           letterSpacing: "0.08em",
-          userSelect: "none",
           textTransform: "uppercase",
+          userSelect: "none",
         }}>
-          {locale === "ar" ? "اسحب للتصفح" : locale === "fr" ? "Glisser pour parcourir" : "Swipe to explore"}
-        </div>
-      </motion.div>
-
-      {/* ── 3D perspective stage ──────────────────────────────────────────── */}
-      <div style={{
-        perspective: "1800px",
-        perspectiveOrigin: "50% 50%",
-        paddingInline: "var(--idea-space-7)",
-      }}>
-        {/*
-          The strip scrolls horizontally.
-          rotateY is written directly to this element's style during drag.
-          transition is toggled: "none" during active drag, spring on release.
-        */}
-        <div
-          ref={stripRef}
-          className="idea-ls-strip"
-          onMouseDown={onMouseDown}
-          onMouseMove={onMouseMove}
-          onMouseUp={onMouseUp}
-          onMouseLeave={onMouseLeave}
-          onScroll={onScroll}
-          style={{
-            display: "flex",
-            overflowX: "auto",
-            scrollSnapType: "x mandatory",
-            gap: "var(--idea-space-3)",
-            paddingBottom: "var(--idea-space-4)",
-            height: "clamp(390px, 62vh, 680px)",
-            scrollbarWidth: "none",
-            cursor: cursor,
-            userSelect: "none",
-            WebkitUserSelect: "none",
-            // Initial transform — drag overwrites this via DOM
-            transform: "rotateY(0deg)",
-            transformStyle: "preserve-3d",
-            willChange: "transform, scroll-position",
-          }}
-        >
-          {MATERIAL_LOOKS.map((look, idx) => (
-            <div
-              key={look.id}
-              data-ls-card
-              style={{ flex: "0 0 34vw", minWidth: 262, maxWidth: 490, height: "100%", flexShrink: 0 }}
-            >
-              <LookCard look={look} idx={idx} />
-            </div>
-          ))}
+          <ChevronLeft size={13} />
+          {locale === "ar" ? "اسحب لاستكشاف" : locale === "fr" ? "Glisser pour explorer" : "Drag to explore"}
+          <ChevronRight size={13} />
         </div>
       </div>
 
-      {/* ── Dot progress indicator ────────────────────────────────────────── */}
-      <div style={{
-        display: "flex", justifyContent: "center",
-        gap: "var(--idea-space-2)",
-        paddingTop: "var(--idea-space-4)",
-      }}>
-        {MATERIAL_LOOKS.map((look, i) => {
-          const pal = LOOK_PALETTE[look.id];
-          const active = i === activeDot;
+      {/* ── Carousel strip ───────────────────────────────────────────── */}
+      <div
+        ref={stripRef}
+        className="idea-ls-strip"
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseLeave}
+        style={{
+          display: "flex",
+          overflowX: "auto",
+          gap: "var(--idea-space-3)",
+          padding: "var(--idea-space-2) var(--idea-space-7) var(--idea-space-4)",
+          height: "clamp(360px, 55vh, 600px)",
+          scrollbarWidth: "none",
+          cursor,
+          userSelect: "none",
+          WebkitUserSelect: "none",
+        }}
+      >
+        {LOOP.map((tile, i) => {
+          const cardRef = { current: null as HTMLDivElement | null };
           return (
-            <button
-              key={look.id}
-              aria-label={`Go to ${look.label.en}`}
-              onClick={() => {
-                const strip = stripRef.current;
-                if (!strip) return;
-                const cards = strip.querySelectorAll("[data-ls-card]");
-                (cards[i] as HTMLElement)?.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
-              }}
+            <div
+              key={`${tile.id}-${i}`}
+              data-ls-card
+              ref={cardRef}
               style={{
-                width: active ? 26 : 8,
-                height: 8,
-                borderRadius: "var(--idea-radius-full)",
-                border: "none",
-                background: active ? pal.accent : `${pal.accent}50`,
-                cursor: "pointer",
-                padding: 0,
-                transition: "width 0.4s cubic-bezier(0.22,1,0.36,1), background 0.3s ease",
+                flex: "0 0 clamp(240px, 28vw, 380px)",
+                height: "100%",
+                flexShrink: 0,
+                position: "relative",
               }}
-            />
+            >
+              <TileCard
+                tile={tile}
+                isActive={activeTile?.id === tile.id}
+                hasAnyActive={activeTile !== null}
+                onSelect={() => {
+                  const parentEl = (document.querySelectorAll("[data-ls-card]")[i] as HTMLElement) ?? null;
+                  handleCardSelect(tile, parentEl);
+                }}
+              />
+            </div>
           );
         })}
       </div>
 
-      {/* ── Scoped CSS ────────────────────────────────────────────────────── */}
+      {/* ── Detail panel ─────────────────────────────────────────────── */}
+      <DetailPanel tile={activeTile} onClose={() => setActive(null)} locale={locale} />
+
+      {/* ── Scoped CSS ────────────────────────────────────────────────── */}
       <style>{`
         .idea-ls-strip::-webkit-scrollbar { display: none; }
-
-        /* Shimmer — staggered per look */
-        @keyframes idea-ls-pass {
-          0%, 55%, 100% { left: -44%; opacity: 0; }
-          10%, 45%       { opacity: 1; }
-          53%            { left: 114%; opacity: 0; }
-        }
-        .idea-ls-sweep               { animation: idea-ls-pass 11s ease-in-out infinite; }
-        .idea-ls-sweep--marble       { animation-delay: 0s; }
-        .idea-ls-sweep--wood         { animation-delay: 2.2s; }
-        .idea-ls-sweep--stone        { animation-delay: 4.4s; }
-        .idea-ls-sweep--pattern      { animation-delay: 6.6s; }
-        .idea-ls-sweep--colour       { animation-delay: 8.8s; }
-
-        /* Responsive card widths */
-        @media (max-width: 1100px) {
-          .idea-ls-strip [data-ls-card] { flex: 0 0 52vw !important; }
-        }
-        @media (max-width: 720px) {
-          .idea-ls-strip [data-ls-card] { flex: 0 0 82vw !important; }
-        }
-        @media (max-width: 480px) {
-          .idea-ls-strip [data-ls-card] { flex: 0 0 93vw !important; }
-        }
-
-        /* touch-action:none lets our non-passive touchmove handler call preventDefault on iOS */
         .idea-ls-strip { touch-action: none; }
+
+        .idea-ls-cta:hover {
+          background: var(--idea-gold-deep) !important;
+        }
+
+        .idea-ls-panel {
+          animation: idea-ls-panel-in 0.42s cubic-bezier(0.22,1,0.36,1) both;
+        }
+        @keyframes idea-ls-panel-in {
+          from { opacity: 0; transform: translateY(12px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 900px) {
+          .idea-ls-panel {
+            grid-template-columns: 1fr !important;
+          }
+          .idea-ls-panel > :first-child {
+            height: 160px !important;
+          }
+        }
+
+        @media (max-width: 760px) {
+          .idea-ls-strip {
+            padding-inline: var(--idea-space-4) !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .idea-ls-strip {
+            padding-inline: var(--idea-space-3) !important;
+          }
+          .idea-ls-strip [data-ls-card] {
+            flex: 0 0 82vw !important;
+          }
+        }
       `}</style>
     </section>
   );
